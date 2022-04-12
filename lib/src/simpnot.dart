@@ -11,6 +11,62 @@ const int noteFetchLength = 1000;
 const String authHeader = 'X-Simperium-API-Key';
 const String dataHeader = 'X-Simperium-Token';
 
+class Note {
+  List<dynamic>? tags;
+  bool? deleted;
+  String? shareURL;
+  String? publishURL;
+  String? content;
+  List<dynamic>? systemTags;
+  double? modificationDate;
+  double? creationDate;
+  String? id;
+  int? version;
+  Note(Map<String, dynamic>? noteDict) {
+    tags = noteDict?['tags'];
+    deleted = noteDict?['deleted'];
+    shareURL = noteDict?['shareURL'];
+    publishURL = noteDict?['publishURL'];
+    content = noteDict?['content'];
+    systemTags = noteDict?['systemTags'];
+    modificationDate = noteDict?['modificationDate'];
+    creationDate = noteDict?['creationDate'];
+
+    // Id and Version arent part of note object returned by api in form of json
+    id = noteDict?['id'];
+    version = noteDict?['version'];
+  }
+
+  // Excluding id and version
+  Map<String, dynamic>? encodeForAPI() {
+    return {
+      "tags": tags,
+      "deleted": deleted,
+      "shareURL": shareURL,
+      "publishURL": publishURL,
+      "content": content,
+      "systemTags": systemTags,
+      "modificationDate": modificationDate,
+      "creationDate": creationDate
+    };
+  }
+
+  Map<String, dynamic>? encodeAsDict() {
+    return {
+      "tags": tags,
+      "deleted": deleted,
+      "shareURL": shareURL,
+      "publishURL": publishURL,
+      "content": content,
+      "systemTags": systemTags,
+      "modificationDate": modificationDate,
+      "creationDate": creationDate,
+      "version": version,
+      "id": id
+    };
+  }
+}
+
 ///Class for interacting with simplenote web service
 class Simplenote {
   String username;
@@ -23,17 +79,13 @@ class Simplenote {
 
   ///Returns Simplenote API token using provided username and password
   Future<String?> authenticate(String username, String password) async {
-    var tokenReceived = '';
     try {
       var r = await post(Uri.parse(authURL),
           headers: {authHeader: apiKey},
           body: {"username": username, "password": password});
-      tokenReceived = jsonDecode(r.body)["access_token"];
-    } catch (e) {}
-    if (tokenReceived == '') {
+      return jsonDecode(r.body)["access_token"];
+    } catch (e) {
       return null;
-    } else {
-      return tokenReceived;
     }
   }
 
@@ -47,8 +99,7 @@ class Simplenote {
     }
   }
 
-  Future<Map<String, dynamic>?> getNote(String noteid,
-      [String? version]) async {
+  Future<Note?> getNote(String noteid, [String? version]) async {
     String paramsVersion = "";
     var tokenCurrent = await getToken();
     if (tokenCurrent == null) {
@@ -65,8 +116,25 @@ class Simplenote {
       }
       var q = jsonDecode(r.body);
       q['id'] = noteid;
-      q['version'] = version;
-      return q;
+      if (version != null) {
+        q['version'] = version;
+      }
+      return Note(q);
     }
   }
+
+  //Future<Note?> updateNote(Note note) async {
+  //var q = note.encodeAsDict();
+  //if (q == null) {
+  //return null;
+  //} else {
+  //var copyNote = Note(q);
+  //}
+  //if (copyNote.id != null) {
+  //var isNew = true;
+  //} else {
+  //var isNew = false;
+  //}
+  //if (copyNote.version != null) {}
+  //}
 }
